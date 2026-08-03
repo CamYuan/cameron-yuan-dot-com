@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { InterviewState } from "@/lib/graph/state";
+import { reducerSpec } from "@/lib/graph/state";
 
 describe("InterviewState", () => {
   it("has a default state with empty labels and answers", () => {
-    const spec = InterviewState.spec;
+    const spec = reducerSpec;
     expect(spec.labels.default()).toEqual([]);
     expect(spec.answers.default()).toEqual({});
     expect(spec.citations.default()).toEqual([]);
@@ -11,7 +11,7 @@ describe("InterviewState", () => {
   });
 
   it("merges answers via the answers reducer instead of overwriting", () => {
-    const spec = InterviewState.spec;
+    const spec = reducerSpec;
     const merged = spec.answers.reducer(
       { experience: { text: "a", source: "s1" } },
       { projects: { text: "b", source: "s2" } },

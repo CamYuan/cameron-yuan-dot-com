@@ -35,7 +35,7 @@ const finalAnswerConfig = {
   default: () => "",
 };
 
-const _InterviewState = Annotation.Root({
+export const InterviewState = Annotation.Root({
   question: Annotation<string>(questionConfig),
   labels: Annotation<SpecialistLabel[]>(labelsConfig),
   answers: Annotation<Record<string, SpecialistAnswer>>(answersConfig),
@@ -43,8 +43,10 @@ const _InterviewState = Annotation.Root({
   finalAnswer: Annotation<string>(finalAnswerConfig),
 });
 
-// Export configs for testing - expose the same interface as the test expects
-export const spec = {
+// Reducer/default configs, exposed separately for unit testing — NOT attached to
+// InterviewState itself, since Annotation.Root already reserves `.spec` internally
+// for its own channel definitions and overwriting it breaks graph construction.
+export const reducerSpec = {
   question: questionConfig,
   labels: labelsConfig,
   answers: answersConfig,
@@ -52,6 +54,4 @@ export const spec = {
   finalAnswer: finalAnswerConfig,
 } as const;
 
-export const InterviewState = Object.assign(_InterviewState, { spec }) as typeof _InterviewState & { spec: typeof spec };
-
-export type InterviewStateType = typeof _InterviewState.State;
+export type InterviewStateType = typeof InterviewState.State;
