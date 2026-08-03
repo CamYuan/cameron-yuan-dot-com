@@ -1,27 +1,58 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #fff7ed;
-  --nav-bg: #fffaf3;
-  --nav-border: #ffe4c2;
-  --brand-accent: #ff8a3d;
-  --text-1: #2a1a0f;
-  --text-2: #6b4a2f;
-  --text-3: #8a6a4a;
-  --text-muted: #b08a5a;
-  --accent: #ffb454;
-  --accent-rgb: 255, 180, 84;
-  --accent-hover: #ffa93d;
-  --accent-strong: #b5651d;
-  --card-bg: #ffffff;
-  --pill-bg: #fff3e6;
-  --pill-border: #ffe0b3;
-  --user-msg-bg: #ffe9d1;
-  --bot-border: #ffd9a8;
-  --shadow-rgb: 150, 90, 20;
-  --active-nav-bg: #ffe9d1;
-  --node-done-bg: #f0faf0;
-  --node-done-border: #7fbf7f;
+  --bg: #FBFBF9;
+  --surface: #F2F2ED;
+  --text: #1A1A17;
+  --muted: #6B6B65;
+  --accent: #6B7A1F;
+  --accent-rgb: 107, 122, 31;
+  --border: #DEDED6;
+  --shadow-rgb: 26, 26, 23;
+
+  --nav-bg: var(--surface);
+  --nav-border: var(--border);
+  --brand-accent: var(--accent);
+  --text-1: var(--text);
+  --text-2: var(--muted);
+  --text-3: var(--muted);
+  --text-muted: var(--muted);
+  --accent-hover: color-mix(in srgb, var(--accent) 85%, var(--text));
+  --accent-strong: var(--accent);
+  --card-bg: var(--surface);
+  --pill-bg: var(--surface);
+  --pill-border: var(--border);
+  --user-msg-bg: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  --bot-border: var(--border);
+  --active-nav-bg: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  --node-done-bg: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  --node-done-border: var(--accent);
+}
+
+/* dark values only override the base tokens above — every derived
+   var() (accent-hover, user-msg-bg, etc.) recomputes automatically */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #16171A;
+    --surface: #1F2125;
+    --text: #E8E8E2;
+    --muted: #9598A0;
+    --accent: #C4DB4B;
+    --accent-rgb: 196, 219, 75;
+    --border: #2C2E33;
+    --shadow-rgb: 0, 0, 0;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #16171A;
+  --surface: #1F2125;
+  --text: #E8E8E2;
+  --muted: #9598A0;
+  --accent: #C4DB4B;
+  --accent-rgb: 196, 219, 75;
+  --border: #2C2E33;
+  --shadow-rgb: 0, 0, 0;
 }
 
 body {
@@ -39,7 +70,14 @@ a { color: inherit; text-decoration: none; }
 }
 .brand { font-weight: 800; font-size: 1.15rem; }
 .brand span { color: var(--brand-accent); }
+.nav-right { display: flex; align-items: center; gap: 18px; }
 .navlinks { display: flex; gap: 6px; }
+.theme-toggle {
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 999px;
+  width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 1rem; line-height: 1;
+}
+.theme-toggle:hover { background: var(--pill-bg); }
 .navlinks a {
   font-weight: 600; font-size: .92rem; padding: 8px 16px; border-radius: 999px; color: var(--text-2);
 }
