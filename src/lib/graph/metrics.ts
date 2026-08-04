@@ -5,10 +5,11 @@ export interface UsageTotals {
   input: number;
   output: number;
   calls: number;
+  hasUsage: boolean;
 }
 
 export function newUsageTotals(): UsageTotals {
-  return { input: 0, output: 0, calls: 0 };
+  return { input: 0, output: 0, calls: 0, hasUsage: false };
 }
 
 export function withUsageTracking(model: BaseChatModel, totals: UsageTotals): BaseChatModel {
@@ -18,6 +19,7 @@ export function withUsageTracking(model: BaseChatModel, totals: UsageTotals): Ba
       totals.calls += 1;
       const usage = (result as AIMessage).usage_metadata;
       if (usage) {
+        totals.hasUsage = true;
         totals.input += usage.input_tokens ?? 0;
         totals.output += usage.output_tokens ?? 0;
       }

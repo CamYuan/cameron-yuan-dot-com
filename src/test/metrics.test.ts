@@ -17,10 +17,10 @@ describe("withUsageTracking", () => {
     await tracked.invoke("first");
     await tracked.invoke("second");
 
-    expect(totals).toEqual({ input: 20, output: 10, calls: 2 });
+    expect(totals).toEqual({ input: 20, output: 10, calls: 2, hasUsage: true });
   });
 
-  it("does not throw and leaves totals unchanged when usage_metadata is missing", async () => {
+  it("does not throw and leaves hasUsage false when usage_metadata is missing", async () => {
     const totals = newUsageTotals();
     const model = fakeModel(undefined);
     const tracked = withUsageTracking(model, totals);
@@ -28,7 +28,7 @@ describe("withUsageTracking", () => {
     const result = await tracked.invoke("question");
 
     expect(result).toEqual({ content: "hi", usage_metadata: undefined });
-    expect(totals).toEqual({ input: 0, output: 0, calls: 1 });
+    expect(totals).toEqual({ input: 0, output: 0, calls: 1, hasUsage: false });
   });
 
   it("still delegates the actual response content unchanged", async () => {
