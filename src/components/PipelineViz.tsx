@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useImperativeHandle, forwardRef } from "react";
+import { MetricsRow } from "@/components/MetricsRow";
 
 type NodeStatus = "idle" | "active" | "done";
 type NodeId = "router" | "experienceAgent" | "projectsAgent" | "skillsAgent" | "synthesizer";
@@ -57,8 +58,17 @@ function edgeStatus(edge: Edge, display: Record<DisplayNodeId, NodeStatus>): Edg
   return display[edge.target] === "idle" ? "idle" : display[edge.target] === "active" ? "active" : "done";
 }
 
+interface GraphResult {
+  finalAnswer: string;
+  citations?: string[];
+  elapsedMs: number;
+  tokenUsage: { input: number; output: number } | null;
+}
+
 export interface PipelineVizHandle {
   applyEvent: (event: { name: string; status: "active" | "done" }) => void;
+  setResult: (result: GraphResult) => void;
+  setError: (message: string) => void;
   reset: () => void;
 }
 
@@ -93,14 +103,26 @@ function Node({ id, status }: { id: DisplayNodeId; status: NodeStatus }) {
 
 export const PipelineViz = forwardRef<PipelineVizHandle>(function PipelineViz(_props, ref) {
   const [statuses, setStatuses] = useState<Record<NodeId, NodeStatus>>(IDLE_STATUSES);
+  const [result, setResult] = useState<GraphResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useImperativeHandle(ref, () => ({
     applyEvent(event) {
       if (!(event.name in IDLE_STATUSES)) return;
       setStatuses((prev) => ({ ...prev, [event.name]: event.status }));
     },
+    setResult(next) {
+      setResult(next);
+      setError(null);
+    },
+    setError(message) {
+      setError(message);
+      setResult(null);
+    },
     reset() {
       setStatuses(IDLE_STATUSES);
+      setResult(null);
+      setError(null);
     },
   }));
 
@@ -137,6 +159,20 @@ export const PipelineViz = forwardRef<PipelineVizHandle>(function PipelineViz(_p
           );
         })}
       </svg>
+      {error && <div className="fmsg-bot">{error}</div>}
+      {result && (
+        <>
+          <div className="fmsg-bot">
+            {result.finalAnswer}
+            <div>
+              {result.citations?.map((c) => (
+                <span key={c} className="cite">🔗 {c}</span>
+              ))}
+            </div>
+          </div>
+          <MetricsRow elapsedMs={result.elapsedMs} tokenUsage={result.tokenUsage} />
+        </>
+      )}
     </div>
   );
 });

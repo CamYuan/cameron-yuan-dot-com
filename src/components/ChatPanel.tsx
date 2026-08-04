@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { PipelineViz, type PipelineVizHandle } from "@/components/PipelineViz";
+import { SingleAgentPanel, type SingleAgentPanelHandle } from "@/components/SingleAgentPanel";
 
 interface ChatMessage {
   role: "user" | "bot";
@@ -15,11 +16,31 @@ const SUGGESTIONS = [
   "Tell me about a project you built",
 ];
 
+const OVERLOADED_MESSAGE = "my agent's a little overloaded — try again in a moment";
+
+async function* readNdjson(body: ReadableStream<Uint8Array>) {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      if (line.trim()) yield JSON.parse(line);
+    }
+  }
+}
+
 export function ChatPanel() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [compareMode, setCompareMode] = useState(false);
   const vizRef = useRef<PipelineVizHandle>(null);
+  const singleRef = useRef<SingleAgentPanelHandle>(null);
 
   async function ask(question: string) {
     if (!question.trim() || busy) return;
@@ -27,29 +48,29 @@ export function ChatPanel() {
     setMessages((prev) => [...prev, { role: "user", text: question }]);
     setInput("");
     vizRef.current?.reset();
+    singleRef.current?.reset();
 
     try {
-      const res = await fetch("/api/interview", {
+      const res = await fetch(compareMode ? "/api/interview/compare" : "/api/interview", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ question }),
       });
 
       if (!res.body) throw new Error("no response body");
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          const event = JSON.parse(line);
+      for await (const event of readNdjson(res.body)) {
+        if (compareMode) {
+          if (event.flow === "single") {
+            if (event.type === "node") singleRef.current?.setStatus(event.status);
+            else if (event.type === "result") singleRef.current?.setResult(event);
+            else if (event.type === "error") singleRef.current?.setError(event.message);
+          } else if (event.flow === "graph") {
+            if (event.type === "node") vizRef.current?.applyEvent(event);
+            else if (event.type === "result") vizRef.current?.setResult(event);
+            else if (event.type === "error") vizRef.current?.setError(event.message);
+          }
+        } else {
           if (event.type === "node") {
             vizRef.current?.applyEvent(event);
           } else if (event.type === "result") {
@@ -63,18 +84,30 @@ export function ChatPanel() {
         }
       }
     } catch {
-      setMessages((prev) => [
-        ...prev,
-        { role: "bot", text: "my agent's a little overloaded — try again in a moment" },
-      ]);
+      if (compareMode) {
+        singleRef.current?.setError(OVERLOADED_MESSAGE);
+        vizRef.current?.setError(OVERLOADED_MESSAGE);
+      } else {
+        setMessages((prev) => [...prev, { role: "bot", text: OVERLOADED_MESSAGE }]);
+      }
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div className="demo-layout">
+    <div className={`demo-layout ${compareMode ? "compare" : ""}`}>
       <div className="card">
+        <div className="compare-toggle-row">
+          <label className="compare-toggle">
+            <input
+              type="checkbox"
+              checked={compareMode}
+              onChange={(e) => setCompareMode(e.target.checked)}
+            />
+            Compare with a single agent
+          </label>
+        </div>
         <div className="chat-log">
           {messages.map((m, i) =>
             m.role === "user" ? (
@@ -111,6 +144,7 @@ export function ChatPanel() {
           ))}
         </div>
       </div>
+      {compareMode && <SingleAgentPanel ref={singleRef} />}
       <PipelineViz ref={vizRef} />
     </div>
   );
