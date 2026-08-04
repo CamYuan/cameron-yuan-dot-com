@@ -52,7 +52,8 @@ export async function POST(req: Request): Promise<Response> {
             }
           }
         }
-      } catch {
+      } catch (err) {
+        console.error("[/api/interview] graph error:", err);
         send({
           type: "error",
           message: "my agent's a little overloaded — try again in a moment",
