@@ -73,7 +73,7 @@ export function ChatPanel() {
   }
 
   return (
-    <>
+    <div className="demo-layout">
       <div className="card">
         <div className="chat-log">
           {messages.map((m, i) =>
@@ -112,6 +112,6 @@ export function ChatPanel() {
         </div>
       </div>
       <PipelineViz ref={vizRef} />
-    </>
+    </div>
   );
 }

@@ -27,6 +27,13 @@
   --active-nav-bg: color-mix(in srgb, var(--accent) 14%, var(--surface));
   --node-done-bg: color-mix(in srgb, var(--accent) 12%, var(--surface));
   --node-done-border: var(--accent);
+
+  /* For text sitting directly on a solid accent background (.cite, .chat-send).
+     Light accent is already near-optimal for dark text, so darken the background
+     a bit further for headroom; dark-mode accent is bright enough as-is — the fix
+     there is the text color, not the background (see --on-accent below). */
+  --accent-solid: color-mix(in srgb, var(--accent) 78%, black);
+  --on-accent: #14140d;
 }
 
 /* dark values only override the base tokens above — every derived
@@ -41,6 +48,7 @@
     --accent-rgb: 196, 219, 75;
     --border: #2C2E33;
     --shadow-rgb: 0, 0, 0;
+    --accent-solid: var(--accent);
   }
 }
 
@@ -53,6 +61,7 @@
   --accent-rgb: 196, 219, 75;
   --border: #2C2E33;
   --shadow-rgb: 0, 0, 0;
+  --accent-solid: var(--accent);
 }
 
 body {
@@ -109,8 +118,8 @@ a { color: inherit; text-decoration: none; }
   border-radius: 4px 16px 16px 16px; font-size: .92rem; line-height: 1.5; max-width: 90%;
 }
 .cite {
-  display: inline-block; margin: 8px 6px 0 0; font-size: .72rem; background: var(--accent);
-  color: var(--text-1); padding: 3px 10px; border-radius: 999px; font-weight: 600;
+  display: inline-block; margin: 8px 6px 0 0; font-size: .72rem; background: var(--accent-solid);
+  color: var(--on-accent); padding: 3px 10px; border-radius: 999px; font-weight: 600;
 }
 
 .chat-input-row { display: flex; gap: 10px; }
@@ -120,10 +129,10 @@ a { color: inherit; text-decoration: none; }
 }
 .chat-input:focus { outline: none; border-color: var(--accent); }
 .chat-send {
-  background: var(--accent); border: none; border-radius: 999px; padding: 0 22px;
-  font-weight: 700; cursor: pointer; font-size: .9rem; color: var(--text-1);
+  background: var(--accent-solid); border: none; border-radius: 999px; padding: 0 22px;
+  font-weight: 700; cursor: pointer; font-size: .9rem; color: var(--on-accent);
 }
-.chat-send:hover { background: var(--accent-hover); }
+.chat-send:hover { background: color-mix(in srgb, var(--accent-solid) 85%, var(--text)); }
 .chat-send:disabled { opacity: .5; cursor: not-allowed; }
 
 .suggestions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
@@ -133,24 +142,52 @@ a { color: inherit; text-decoration: none; }
 }
 .suggestion:hover { background: var(--user-msg-bg); }
 
-.graph-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
-.specialists-row { display: flex; justify-content: center; gap: 10px; margin: 10px 0; flex-wrap: wrap; }
-.fnode {
-  background: var(--pill-bg); border-radius: 16px; padding: 14px 10px; font-size: .8rem;
-  text-align: center; border: 2px solid transparent; width: 108px; transition: all .3s;
+.demo-layout {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: stretch;
+  min-height: calc(100vh - 260px);
 }
-.fnode .fn-emoji { font-size: 1.3rem; }
-.fnode .fn-title { font-weight: 700; margin-top: 4px; color: var(--text-1); }
-.fnode .fn-state { font-size: .68rem; color: var(--text-muted); margin-top: 2px; height: 14px; }
-.fnode.active {
-  border-color: var(--accent); background: var(--user-msg-bg); transform: scale(1.06);
-  box-shadow: 0 4px 14px rgba(var(--accent-rgb), .35);
+@media (max-width: 860px) { .demo-layout { grid-template-columns: 1fr; min-height: auto; } }
+
+.demo-layout > .card { display: flex; flex-direction: column; height: 100%; }
+.chat-log { flex: 1; overflow-y: auto; margin-bottom: 12px; }
+
+.pipeline-card {
+  border-radius: 22px; padding: 24px 28px; margin-bottom: 26px;
+  box-shadow: 0 8px 28px rgba(var(--shadow-rgb), .08);
+  background-color: var(--bg);
+  background-image: radial-gradient(circle at 1px 1px, var(--border) 1px, transparent 0);
+  background-size: 18px 18px;
+  display: flex; flex-direction: column; height: 100%;
 }
-.fnode.done { border-color: var(--node-done-border); background: var(--node-done-bg); }
-.fnode.done .fn-state::before { content: '✓ '; color: #4caf50; }
-.fnode.active .fn-state::before { content: '● '; color: var(--brand-accent); }
-.farrow { color: var(--pill-border); font-size: 1.3rem; }
-.fun-caption { margin-top: 14px; font-size: .85rem; color: var(--text-2); text-align: center; min-height: 20px; }
+.pipeline-svg { flex: 1; width: 100%; height: 100%; display: block; overflow: visible; }
+
+.edge { fill: none; stroke: var(--border); stroke-width: 1.5px; transition: stroke .3s, stroke-width .3s; }
+.edge.done { stroke: var(--accent); stroke-width: 2px; }
+.edge.active { stroke: var(--accent); stroke-width: 2px; }
+.edge-pulse { fill: var(--accent); }
+
+.port { fill: var(--card-bg); stroke: var(--border); stroke-width: 1.5px; transition: stroke .3s; }
+.port.active, .port.done { stroke: var(--accent); }
+
+.wnode {
+  width: 100%; height: 100%; box-sizing: border-box;
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+  padding: 7px 12px; display: flex; flex-direction: column; justify-content: center; gap: 3px;
+  box-shadow: 0 2px 8px rgba(var(--shadow-rgb), .06);
+  transition: border-color .3s, box-shadow .3s;
+}
+.wnode-row { display: flex; align-items: center; gap: 7px; }
+.wnode-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.wnode-dot.blue { background: #6f9bf0; }
+.wnode-dot.green { background: #4fbf8b; }
+.wnode-dot.purple { background: #a889f0; }
+.wnode-title { font-size: .78rem; font-weight: 700; color: var(--text-1); }
+.wnode-type {
+  font-size: .62rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--text-muted); margin-left: 15px;
+}
+.wnode.active { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .18); }
+.wnode.done { border-color: var(--node-done-border); }
 
 .grid-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
 @media (max-width: 700px) { .grid-cards { grid-template-columns: 1fr; } }
